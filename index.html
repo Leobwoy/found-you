@@ -106,7 +106,7 @@
   @keyframes hit { from { background: rgba(57,255,20,.22); } to { background: transparent; } }
   .linkish { background: none; border: 0; padding: 0; margin-top: 16px; font: inherit; color: var(--dim); text-decoration: underline; cursor: pointer; }
 
-  #end { margin-top: 30px; border-top: 1px solid var(--line); padding-top: 20px; }
+  #end { margin: 0; }
   .line.edu { color: #dfffe6; margin-bottom: .75em; }
   .line.edu.lead { font-weight: 700; font-size: 1.15em; }
   .line.edu.tip { padding-left: 1.6em; text-indent: -1.6em; }
@@ -168,9 +168,9 @@ const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' 
 const isAndroid = /Android/.test(ua) || (uad && uad.platform === 'Android');
 const isMobile = isIOS || isAndroid || (uad && uad.mobile);
 
-/* tap anywhere = fast-forward the typing */
+/* tap anywhere = fast-forward the typing (a real tap, not a scroll: scrolling never becomes a click) */
 let skip = false;
-document.addEventListener('pointerdown', () => { skip = true; }, { passive: true });
+document.addEventListener('click', () => { skip = true; });
 
 /* ── matrix rain ── */
 (function rain() {
@@ -216,7 +216,9 @@ function logLine(text, cls) {                   // instant line, no typing
 async function typeLine(parts, cls, opts) {
   opts = opts || {};
   const pace = opts.pace || 1;
-  const nearBottom = innerHeight + scrollY >= document.body.scrollHeight - 160;
+  const nearBottom = () => innerHeight + scrollY >= document.body.scrollHeight - 160;
+  const follow = () => { if (nearBottom()) window.scrollTo(0, document.body.scrollHeight); };
+  let following = nearBottom();
   const p = document.createElement('p');
   p.className = 'line' + (cls ? ' ' + cls : '');
   (opts.target || log).appendChild(p);
@@ -240,12 +242,13 @@ async function typeLine(parts, cls, opts) {
         due += (/[.!?—]/.test(ch) ? 110 : /[,;:]/.test(ch) ? 50 : 9 + Math.random() * 12) * pace;
       }
       span.textContent = text.slice(0, i);
+      if (following) follow();
       if (skip) { span.textContent = text; break; }
       if (i < text.length) await sleep(Math.max(0, due - performance.now()));
     }
   }
   p.classList.remove('cursor');
-  if (nearBottom) window.scrollTo(0, document.body.scrollHeight);
+  if (following) follow();
   await sleep(skip || reduced ? 0 : (opts.gap || 200));
 }
 
@@ -632,26 +635,38 @@ const LESSON = [
   { parts: ["Every website you open can see all of this the second it loads. Google. That betting site. That link your uncle forwarded. All of them."], gap: 1200 },
   { parts: ["What none of them can see: ", K('your name'), ', ', K('your number'), ', ', K('your contacts'), ', ', K('your photos'), ', ', K('your WhatsApp'), '.'], gap: 1200 },
   { parts: ["Your exact location? Only if you tap ", K('"Allow"'), ". So only tap it for apps that need it — maps, Bolt, Uber."], gap: 1400 },
-  { parts: ["Now, since you're here — a few things that actually keep you safe. Small small."], gap: 1400 },
-  { parts: ["1. WhatsApp will send you a ", K('6-digit code'), ". Never give it to anyone. Not \"WhatsApp support\", not \"MTN\", not your cousin. ", K('That code IS your account.')], cls: 'tip', gap: 1600 },
-  { parts: ["2. Lock it properly: WhatsApp → Settings → Account → ", K('Two-step verification'), ". Thirty seconds. Stops almost every hijack."], cls: 'tip', gap: 1600 },
-  { parts: ["3. MTN, Telecel and AirtelTigo will ", K('never'), " call to ask for your MoMo PIN. Anyone who asks is a thief. Hang up."], cls: 'tip', gap: 1600 },
-  { parts: ["4. \"I sent you money by mistake, please send it back\" — check your balance first. Nothing came in. ", K("It's a scam."), ""], cls: 'tip', gap: 1600 },
-  { parts: ["5. One password per app, and make it a ", K('sentence'), ". \"MyGrandmaSellsKenkeyAtMarketCircle\" beats \"Kofi2024\". Let your phone remember them."], cls: 'tip', gap: 1600 },
-  { parts: ["6. \"Congratulations, you've won…\" — you haven't. Anything that needs a \"small fee\" to release money is a scam. ", K('Every single time.')], cls: 'tip', gap: 1600 },
-  { parts: ["7. Update your phone when it asks. Boring, I know. Half of hacking is just old software."], cls: 'tip', gap: 1800 },
+  { parts: ["Now, since you're here — how people actually get hacked, and how not to. Small small."], gap: 1400 },
+  { parts: ["1. WhatsApp sends you a ", K('6-digit code'), ". Never give it to anyone. Not \"WhatsApp support\", not \"MTN\", not your cousin. ", K('That code IS your account.')], cls: 'tip', gap: 1300 },
+  { parts: ["2. \"Your Facebook / Instagram / TikTok account will be deleted — tap here to verify.\" ", K('That link IS the hack.'), " Real apps never ask you to log in through a link someone sent. Open the app yourself."], cls: 'tip', gap: 1300 },
+  { parts: ["3. Check the address before you trust anything. A bank doesn't write from a ", K('gmail'), " address, and MTN doesn't send links ending in ", K('.xyz'), ", ", K('.top'), " or ", K('.click'), ". If the name looks slightly off — \"mtn-gh-support\", \"whatsapp-verify\" — it's fake. Close it."], cls: 'tip', gap: 1300 },
+  { parts: ["4. MTN, Telecel and AirtelTigo will ", K('never'), " call to ask for your MoMo PIN. Anyone who asks is a thief. Hang up."], cls: 'tip', gap: 1300 },
+  { parts: ["5. \"I sent you money by mistake, please send it back\" — check your balance first. Nothing came in. ", K("It's a scam.")], cls: 'tip', gap: 1300 },
+  { parts: ["6. \"Congratulations, you've won…\" — you haven't. Anything that needs a \"small fee\" to release money is a scam. ", K('Every single time.')], cls: 'tip', gap: 1300 },
+  { parts: ["7. Turn on ", K('two-step verification'), " everywhere it's offered — WhatsApp, Facebook, Instagram, TikTok, Gmail. Thirty seconds each. Stops almost every hijack."], cls: 'tip', gap: 1300 },
+  { parts: ["8. One password per app, and make it a ", K('sentence'), ". \"MyGrandmaSellsKenkeyAtMarketCircle\" beats \"Kofi2024\". Let your phone remember them."], cls: 'tip', gap: 1300 },
+  { parts: ["9. Update your phone when it asks. Boring, I know. Half of hacking is just old software."], cls: 'tip', gap: 1800 },
+  { parts: ["If you think you've been hacked — or you just have that feeling:"], cls: 'lead', gap: 1300 },
+  { parts: ["First, change that account's password. Then your ", K('email'), " password — your email is the master key to everything else."], cls: 'tip', gap: 1300 },
+  { parts: ["Log out of every device. WhatsApp → ", K('Linked devices'), ". Facebook, Instagram, Gmail → Security → ", K('"Where you\'re logged in"'), " → log out of all."], cls: 'tip', gap: 1300 },
+  { parts: ["WhatsApp taken? Reinstall it, put in your number, and the new code kicks the thief out. Then turn on two-step verification."], cls: 'tip', gap: 1300 },
+  { parts: ["Tell your people ", K('straight away'), ", so nobody sends money to \"you\"."], cls: 'tip', gap: 1300 },
+  { parts: ["MoMo touched? Call ", K('100'), " from your line and report it. Same minute, not tomorrow."], cls: 'tip', gap: 1800 },
   { parts: ["That's it. Nothing here was saved. Close this and it's gone."], gap: 1400 },
   { parts: ["Now send it to someone who'd panic 😈"], cls: 'lead', gap: 500 },
 ];
-async function revealEnd(scroll) {
+async function revealEnd(byTap) {
   if (ended) return;
   ended = true;
+  if (!byTap) await sleep(2500);                  // all dares caught: let them see the last ✓ before the screen clears
+  // clear the screen, like a terminal
+  $('log').hidden = true; $('doubt').hidden = true; $('dares').hidden = true;
+  window.scrollTo(0, 0);
   const end = $('end');
   end.hidden = false;
-  skip = false;                                   // the tap that got us here shouldn't fast-forward the lesson
-  if (scroll) { end.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }); await sleep(600); }
+  await sleep(reduced ? 0 : 700);
+  skip = false;                                   // reset AFTER the tap that got us here has finished bubbling, or it fast-forwards the lesson
   const target = $('endLog');
-  for (const l of LESSON) await typeLine(l.parts, 'edu' + (l.cls ? ' ' + l.cls : ''), { target, pace: 1.5, gap: l.gap });
+  for (const l of LESSON) await typeLine(l.parts, 'edu' + (l.cls ? ' ' + l.cls : ''), { target, pace: 2, gap: l.gap });
   $('endActions').hidden = false;
 }
 

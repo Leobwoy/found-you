@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>I can see your phone's battery from here.</title>
+<meta name="description" content="Don't believe me? Tap and see what else I can see.">
+
+<!-- WhatsApp link preview (the image must be an absolute URL). -->
+<meta property="og:title" content="I can see your phone's battery from here.">
+<meta property="og:description" content="Don't believe me? Tap and see what else I can see.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://leobwoy.github.io/found-you/preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+
+<meta name="theme-color" content="#050505">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%91%81%3C/text%3E%3C/svg%3E">
+
+<style>
+  :root {
+    --bg: #050505;
+    --fg: #d9d9d9;
+    --dim: #6b7280;
+    --line: #232323;
+    --green: #4ade80;
+    --red: #f87171;
+    --amber: #fbbf24;
+    --wa: #25d366;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); }
+  body {
+    font: 15px/1.7 ui-monospace, Menlo, Consolas, "Roboto Mono", "Droid Sans Mono", monospace;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100dvh;
+    padding: calc(22px + env(safe-area-inset-top)) 20px calc(32px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
+  }
+  /* faint scanlines */
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 2;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 1px, transparent 1px 3px);
+  }
+  main { max-width: 520px; margin: 0 auto; position: relative; z-index: 1; }
+
+  .line { margin: 0 0 .45em; white-space: pre-wrap; word-break: break-word; }
+  .line.dim { color: var(--dim); }
+  .line.found { color: var(--red); font-weight: 700; font-size: 1.45em; margin: .5em 0 .7em; letter-spacing: .01em; }
+  .line.sub { color: var(--dim); margin-top: -.2em; }
+  .v { color: var(--green); }
+  .live { color: var(--amber); font-weight: 700; display: inline-block; min-width: 2ch; }
+  .cursor::after {
+    content: "\258E"; color: var(--green); margin-left: 2px;
+    animation: blink 1s steps(2, start) infinite;
+  }
+  @keyframes blink { to { visibility: hidden; } }
+  .dots::after { content: ""; animation: dots 1.2s steps(4, end) infinite; }
+  @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+
+  #flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 3; }
+  #flash.go { animation: flash .45s ease-out both; }
+  @keyframes flash { from { opacity: .85; } to { opacity: 0; } }
+
+  .btn {
+    display: block; width: 100%; margin-top: 22px; padding: 14px 16px;
+    background: transparent; color: var(--green); border: 1px solid var(--green); border-radius: 8px;
+    font: inherit; font-weight: 700; text-align: left; cursor: pointer; text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { background: rgba(74,222,128,.12); }
+  .btn.wa { background: var(--wa); border-color: var(--wa); color: #04140a; }
+  .btn.ghost { color: var(--fg); border-color: var(--line); font-weight: 400; }
+  .btn.small { display: inline-block; width: auto; margin: 0; padding: 8px 12px; }
+
+  .fade { animation: fade .5s ease-out both; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  #dares h2 { font: inherit; color: var(--fg); margin: 24px 0 6px; }
+  .dare { display: flex; gap: 12px; padding: 11px 0; border-top: 1px dashed var(--line); }
+  .dare .mark { color: var(--dim); flex: none; }
+  .dare .txt { flex: 1; }
+  .dare.done .mark { color: var(--green); }
+  .dare.done .txt { color: var(--green); }
+  .dare.off .txt { color: var(--dim); }
+  .dare .txt a { color: var(--amber); }
+  .linkish { background: none; border: 0; padding: 0; margin-top: 16px; font: inherit; color: var(--dim); text-decoration: underline; cursor: pointer; }
+
+  #end { margin-top: 30px; border-top: 1px solid var(--line); padding-top: 20px; }
+  #end p { margin: 0 0 .9em; color: #fff; }
+  #end p.lead { font-weight: 700; font-size: 1.15em; }
+  #end p.dim { color: var(--dim); }
+  #end ul { margin: -.4em 0 1em; padding-left: 1.4em; color: #fff; }
+  #end .btn + .btn { margin-top: 10px; }
+  footer { margin-top: 28px; color: var(--dim); font-size: .9em; }
+  footer a { color: var(--green); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cursor::after, .dots::after { animation: none; }
+    .fade { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div id="flash"></div>
+<main>
+  <div id="log">
+    <p class="line dim cursor" id="conn">Connecting<span class="dots"></span></p>
+  </div>
+
+  <button class="btn fade" id="doubt" hidden>&gt; Still don't believe me?</button>
+
+  <section id="dares" class="fade" hidden>
+    <h2>Fine. Do any of these. I'll know.</h2>
+    <div id="dareList"></div>
+    <button class="linkish" id="believe">okay okay, I believe you →</button>
+  </section>
+
+  <section id="end" class="fade" hidden>
+    <p class="lead">Relax. I didn't hack you.</p>
+    <p>Every website you open can see all of this the second it loads. Google. That betting site. That link your uncle forwarded. All of them.</p>
+    <p>What none of them can see:</p>
+    <ul>
+      <li>your name</li>
+      <li>your number</li>
+      <li>your contacts</li>
+      <li>your photos</li>
+      <li>your WhatsApp</li>
+    </ul>
+    <p id="locNote">Your exact location? Only if you tap Allow. So don't.</p>
+    <p class="dim">Nothing here was saved. Close this and it's gone.</p>
+    <p class="lead" style="margin-top:1.4em">Now send it to someone who'd panic 😈</p>
+    <a class="btn wa" id="waShare" href="#" target="_blank" rel="noopener">&gt; Send on WhatsApp</a>
+    <button class="btn ghost" id="otherShare">&gt; Copy the link</button>
+    <footer id="foot"></footer>
+  </section>
+</main>
+
+<script>
+/* ───────────── edit these ───────────── */
+const CONFIG = {
+  madeBy: 'Yaw',
+  whatsappNumber: '',      // your number with country code, digits only, e.g. '233241234567'. Enables the "ask me how" button.
+  shareText: 'This page knew my phone model, my battery %, and roughly where I was 😳 Open it and see:',
+};
+/* ────────────────────────────────────── */
+
+const $ = id => document.getElementById(id);
+const log = $('log');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const buzz = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
+const ua = navigator.userAgent;
+const uad = navigator.userAgentData || null;
+const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isAndroid = /Android/.test(ua) || (uad && uad.platform === 'Android');
+const isMobile = isIOS || isAndroid || (uad && uad.mobile);
+
+/* tap anywhere = fast-forward the typing */
+let skip = false;
+document.addEventListener('pointerdown', () => { skip = true; }, { passive: true });
+
+/* ── typing engine ── */
+async function typeLine(parts, cls) {
+  const p = document.createElement('p');
+  p.className = 'line' + (cls ? ' ' + cls : '');
+  log.appendChild(p);
+  p.classList.add('cursor');
+  for (const part of parts) {
+    const obj = typeof part === 'object';
+    const text = obj ? part.text : part;
+    const span = document.createElement('span');
+    if (obj && part.cls) span.className = part.cls;
+    if (obj && part.id) span.id = part.id;
+    p.appendChild(span);
+    if (skip || reduced) { span.textContent = text; continue; }
+    for (const ch of text) {
+      span.textContent += ch;
+      if (skip) { span.textContent = text; break; }
+      await sleep(/[.!?—]/.test(ch) ? 110 : /[,;:]/.test(ch) ? 50 : 9 + Math.random() * 12);
+    }
+  }
+  p.classList.remove('cursor');
+  window.scrollTo(0, document.body.scrollHeight);
+  await sleep(skip || reduced ? 0 : 200);
+}
+
+/* ── motion (Android: no permission needed; iOS: asked later, as a dare) ── */
+const motion = { seen: false, tilt: 0, faceDown: false, sideways: false, shake: false, dirty: false };
+function onMotion(e) {
+  const g = e.accelerationIncludingGravity;
+  if (!g || g.x == null) return;
+  const mag = Math.hypot(g.x, g.y, g.z);
+  if (!mag) return;
+  motion.seen = true;
+  motion.tilt = Math.round(Math.acos(Math.min(1, Math.abs(g.z) / mag)) * 180 / Math.PI); // 0 = flat, 90 = upright
+  motion.faceDown = g.z < -3;
+  motion.sideways = Math.abs(g.x) > 6 && Math.abs(g.x) > Math.abs(g.y);
+  const a = e.acceleration;
+  const jolt = (a && a.x != null) ? Math.hypot(a.x, a.y, a.z) : Math.abs(mag - 9.81);
+  if (jolt > 16) motion.shake = true;
+  motion.dirty = true;
+}
+const needsMotionPermission = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';
+window.addEventListener('devicemotion', onMotion);   // fires straight away on Android; on iOS only after permission (asked later, as a dare)
+
+/* ── data gathering ── */
+async function lookupIP() {
+  const sources = [
+    ['https://ipwho.is/', j => j && j.success !== false && j.ip && {
+      ip: j.ip, city: j.city, region: j.region, country: j.country,
+      isp: j.connection && (j.connection.org || j.connection.isp) }],
+    ['https://ipapi.co/json/', j => j && !j.error && j.ip && {
+      ip: j.ip, city: j.city, region: j.region, country: j.country_name, isp: j.org }],
+    ['https://ipinfo.io/json', j => j && j.ip && {
+      ip: j.ip, city: j.city, region: j.region, country: j.country, isp: (j.org || '').replace(/^AS\d+\s+/, '') }],
+  ];
+  for (const [url, map] of sources) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 2500);
+      const r = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+      clearTimeout(t);
+      const out = map(await r.json());
+      if (out) return out;
+    } catch (e) { /* try the next one */ }
+  }
+  return null;
+}
+
+async function gather() {
+  const t0 = Date.now();
+  const cap = ms => p => Promise.race([p, sleep(ms).then(() => null)]);
+  const [hints, battery, geo] = await Promise.all([
+    cap(2000)(uad && uad.getHighEntropyValues ? uad.getHighEntropyValues(['model', 'platformVersion', 'platform']).catch(() => null) : null),
+    cap(2000)(navigator.getBattery ? navigator.getBattery().catch(() => null) : null),
+    cap(4200)(lookupIP()),
+  ]);
+  const wait = 1100 - (Date.now() - t0);
+  if (wait > 0) await sleep(wait);
+  return { hints, battery, geo };
+}
+
+/* ── device naming ── */
+function samsungName(code) {
+  const m = /^(?:SAMSUNG[ -])?SM-([AMSGNFTXJ])(\d{3})/i.exec(code);
+  if (!m) return null;
+  const L = m[1].toUpperCase(), n = m[2], two = n.slice(0, 2), third = n[2];
+  const G = 'Samsung Galaxy ';
+  if (L === 'A' || L === 'M') return G + L + two + (third === '6' ? ' 5G' : third === '2' ? ' Core' : '');
+  if (L === 'S') {
+    const gen = { 90: 'S22', 91: 'S23', 92: 'S24', 93: 'S25', 94: 'S26', 71: 'S23 FE', 72: 'S24 FE', 73: 'S25 FE' }[two];
+    if (!gen) return G + 'S';
+    if (gen.includes('FE')) return G + gen;
+    return G + gen + (third === '6' ? '+' : third === '8' ? ' Ultra' : third === '7' ? ' Edge' : '');
+  }
+  if (L === 'G') {
+    const gen = { 99: 'S21', 98: 'S20', 97: 'S10', 96: 'S9', 95: 'S8', 93: 'S7', 92: 'S6', 78: 'S20 FE' }[two];
+    if (!gen) return G;
+    if (n === '990') return G + 'S21 FE';
+    if (n === '970') return G + 'S10e';
+    const plus = /^(996|985|986|975|965|955|935|925)$/.test(n), ultra = /^(998|988)$/.test(n);
+    return G + gen + (ultra ? ' Ultra' : plus ? '+' : '');
+  }
+  if (L === 'N') {
+    const gen = { 98: 'Note 20', 97: 'Note 10', 96: 'Note 9', 95: 'Note 8' }[two];
+    if (!gen) return G + 'Note';
+    return G + gen + (/^(985|986)$/.test(n) ? ' Ultra' : /^(975|976)$/.test(n) ? '+' : '');
+  }
+  if (L === 'F') {
+    if (two[0] === '7') return G + ({ 700: 'Z Flip', 707: 'Z Flip 5G', 711: 'Z Flip3', 721: 'Z Flip4', 731: 'Z Flip5', 741: 'Z Flip6', 766: 'Z Flip7' }[n] || 'Z Flip');
+    return G + ({ 900: 'Fold', 916: 'Z Fold2', 926: 'Z Fold3', 936: 'Z Fold4', 946: 'Z Fold5', 956: 'Z Fold6', 966: 'Z Fold7' }[n] || 'Z Fold');
+  }
+  if (L === 'T' || L === 'X') return G + 'Tab';
+  if (L === 'J') return G + 'J' + two;
+  return null;
+}
+
+function deviceName(model) {
+  if (!model) return null;
+  const m = model.trim();
+  let r;
+  if (/^(SAMSUNG[ -])?SM-/i.test(m)) return samsungName(m) || 'Samsung (' + m.replace(/^SAMSUNG[ -]/i, '') + ')';
+  if (/^Pixel/i.test(m)) return 'Google ' + m;
+  if (/^(Redmi|POCO|Mi |Xiaomi)/i.test(m)) return m;
+  if (/^(M2\d{3}[0-9A-Z]+|2[2-9]\d{2}[0-9A-Z]{4,})$/.test(m)) return 'Xiaomi / Redmi (' + m + ')';
+  if ((r = /^TECNO\s+([A-Z])/i.exec(m))) {
+    const series = { K: 'Spark', C: 'Camon', L: 'Pova', A: 'Phantom' }[r[1].toUpperCase()];
+    return series ? 'Tecno ' + series + ' (' + m.replace(/^TECNO\s+/i, '') + ')' : 'Tecno (' + m.replace(/^TECNO\s+/i, '') + ')';
+  }
+  if (/^Infinix/i.test(m)) return 'Infinix (' + m.replace(/^Infinix\s+/i, '') + ')';
+  if (/^itel/i.test(m)) return 'itel (' + m.replace(/^itel\s+/i, '') + ')';
+  if (/^CPH\d{4}/.test(m)) return 'Oppo or OnePlus (' + m + ')';
+  if (/^RMX\d{4}/.test(m)) return 'Realme (' + m + ')';
+  if (/^V\d{4}/.test(m)) return 'Vivo (' + m + ')';
+  if (/^Nokia/i.test(m)) return m;
+  if (/^moto/i.test(m)) return 'Motorola ' + m;
+  if (/^(LM-|LG-)/.test(m)) return 'LG (' + m + ')';
+  if (/^[A-Z]{3}-[A-Z]{1,3}\d/.test(m)) return 'Huawei (' + m + ')';
+  return null;
+}
+
+function iphoneInches() {
+  const w = Math.min(screen.width, screen.height), h = Math.max(screen.width, screen.height), d = devicePixelRatio;
+  const k = w + 'x' + h;
+  const t = { '320x568': '4', '375x667': '4.7', '414x736': '5.5', '390x844': '6.1', '428x926': '6.7', '393x852': '6.1',
+              '430x932': '6.7', '402x874': '6.3', '440x956': '6.9', '420x912': '6.5' };
+  if (k === '414x896') return d >= 3 ? '6.5' : '6.1';
+  return t[k] || null;
+}
+
+function browserName() {
+  if (uad && uad.brands) {
+    const b = uad.brands.find(x => !/Chromium|Not/i.test(x.brand));
+    if (b) return b.brand + ' ' + b.version;
+  }
+  const m = /(Firefox|Edg|OPR|SamsungBrowser|Chrome|Safari)\/(\d+)/.exec(ua);
+  if (!m) return null;
+  return ({ Edg: 'Microsoft Edge', OPR: 'Opera', SamsungBrowser: 'Samsung Internet' }[m[1]] || m[1]) + ' ' + m[2];
+}
+
+function describeDevice(h) {
+  // returns typed parts for the first line, or null
+  const model = (h && h.model) || (() => {
+    const m = /Android [^;]+; ([^;)]+?)(?: Build|\))/.exec(ua);        // non-reduced user agents still carry the model
+    return m && m[1] !== 'K' ? m[1] : null;
+  })();
+  if (isIOS) {
+    const v = /OS (\d+)[_.](\d+)/.exec(ua);
+    const os = v ? 'iOS ' + v[1] + '.' + v[2] : null;
+    const which = /iPad/.test(ua) || navigator.platform === 'MacIntel' ? 'iPad' : 'iPhone';
+    return ["You're on an ", { text: which, cls: 'v' }, os ? [', running ', { text: os, cls: 'v' }, '.'] : ['.']].flat();
+  }
+  const name = deviceName(model);
+  let osv = h && h.platformVersion ? h.platformVersion.split('.')[0] : null;
+  if (!osv && !uad) { const m = /Android (\d+)/.exec(ua); osv = m && m[1]; }
+  if (isAndroid) {
+    if (name) return ["You're on a ", { text: name, cls: 'v' }, osv ? [', running ', { text: 'Android ' + osv, cls: 'v' }, '.'] : ['.']].flat();
+    if (model) return ["Your phone's model code is ", { text: model, cls: 'v' }, osv ? [', running ', { text: 'Android ' + osv, cls: 'v' }, '.'] : ['.']].flat();
+    if (osv) return ["You're on ", { text: 'Android ' + osv, cls: 'v' }, '.'];
+    return null;
+  }
+  // desktop
+  let os = null;
+  const plat = (h && h.platform) || navigator.platform || '';
+  if (/Win/.test(plat)) os = (h && h.platformVersion && parseInt(h.platformVersion) >= 13) ? 'Windows 11' : 'Windows';
+  else if (/Mac/.test(plat)) os = 'macOS';
+  else if (/Linux/.test(plat)) os = 'Linux';
+  else if (/CrOS|Chrome OS/.test(plat + ua)) os = 'ChromeOS';
+  const br = browserName();
+  if (!os && !br) return null;
+  const parts = ["You're on "];
+  if (os) parts.push({ text: os, cls: 'v' });
+  if (os && br) parts.push(', using ');
+  if (br) parts.push({ text: br, cls: 'v' });
+  parts.push('.');
+  return parts;
+}
+
+/* ── the lines, built only from what was actually measured ── */
+function batteryParts(b) {
+  const parts = ['Battery at ', { text: Math.round(b.level * 100) + '%', cls: 'v', id: 'batLvl' }, '. ',
+                 { text: b.charging ? 'Charging right now.' : 'Not charging.', cls: 'v', id: 'batChg' }];
+  if (!b.charging && isFinite(b.dischargingTime) && b.dischargingTime > 0 && b.dischargingTime < 86400) {
+    const h = Math.floor(b.dischargingTime / 3600), m = Math.round((b.dischargingTime % 3600) / 60);
+    parts.push(' About ', { text: (h ? h + 'h ' : '') + m + 'm', cls: 'v' }, ' until it dies.');
+  }
+  return parts;
+}
+
+function brandName(isp) {
+  const aliases = [
+    [/scancom|mtn/i, 'MTN'], [/ghana telecom|vodafone ghana|telecel/i, 'Telecel'], [/millicom|tigo|airtel/i, 'AirtelTigo'],
+    [/surfline/i, 'Surfline'], [/busy internet/i, 'Busy'], [/safaricom/i, 'Safaricom'], [/glo /i, 'Glo'],
+  ];
+  for (const [re, name] of aliases) if (re.test(isp)) return name;
+  return isp.replace(/\s+(Limited|Ltd\.?|PLC|Inc\.?|LLC|S\.?A\.?)$/i, '');
+}
+
+function buildLines(d) {
+  const L = [];
+  const dev = describeDevice(d.hints);
+  if (dev) L.push({ parts: dev });
+
+  if (d.battery && typeof d.battery.level === 'number') L.push({ parts: batteryParts(d.battery) });
+
+  const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  // Only what the connection reliably tells us: WiFi vs mobile data, the carrier, the country.
+  // (No city: mobile networks route everyone through a few gateways, so IP-based city is usually wrong.
+  //  No "3G/4G": the browser only estimates connection quality, not the radio.)
+  const type = c && c.type ? ({ cellular: 'mobile data', wifi: 'WiFi', ethernet: 'a cable', bluetooth: 'Bluetooth', wimax: 'WiMAX' }[c.type] || null) : null;
+  const isp = d.geo && d.geo.isp ? brandName(d.geo.isp) : null;
+  const country = d.geo && d.geo.country ? [', in ', { text: d.geo.country, cls: 'v' }] : [];
+  if (type && isp) L.push({ parts: ['On ', { text: type, cls: 'v' }, ' through ', { text: isp, cls: 'v' }, ...country, '.'] });
+  else if (isp) L.push({ parts: ['Connected through ', { text: isp, cls: 'v' }, ...country, '.'] });
+  else if (type && country.length) L.push({ parts: ['On ', { text: type, cls: 'v' }, ...country, '.'] });
+  else if (type) L.push({ parts: ['On ', { text: type, cls: 'v' }, '.'] });
+  if (d.geo && d.geo.ip) L.push({ parts: ['IP address ', { text: d.geo.ip, cls: 'v' }], cls: 'sub' });
+
+  const specs = [];
+  if (isIOS) { const inch = iphoneInches(); if (inch) specs.push({ text: inch + '-inch screen', cls: 'v' }); }
+  else if (isMobile) {
+    const w = Math.round(Math.min(screen.width, screen.height) * devicePixelRatio), h = Math.round(Math.max(screen.width, screen.height) * devicePixelRatio);
+    if (w && h) specs.push({ text: w + '×' + h + ' screen', cls: 'v' });
+  } else if (screen.width) specs.push({ text: screen.width + '×' + screen.height + ' screen', cls: 'v' });
+  // (No language or timezone: "American English" and "Africa/Accra" are technically true but read as wrong.)
+  specs.push({ text: matchMedia('(prefers-color-scheme: dark)').matches ? 'Dark mode on' : 'Light mode on', cls: 'v' });
+  L.push({ parts: specs.flatMap((s, i) => i ? ['. ', s] : [s]).concat(['.']) });
+
+  if (motion.seen) L.push({ parts: ['Your phone is tilted ', { text: String(motion.tilt), cls: 'live', id: 'tilt' }, '° right now. Move it — I\'ll know.'] });
+  return L;
+}
+
+/* ── live updates ── */
+let lyingSaid = false, faceDownSince = 0;
+function startLive(d) {
+  setInterval(() => {
+    const el = $('tilt');
+    if (el && motion.dirty) { el.textContent = motion.tilt; motion.dirty = false; }
+    if (el && !lyingSaid) {
+      if (motion.faceDown) {
+        if (!faceDownSince) faceDownSince = Date.now();
+        else if (Date.now() - faceDownSince > 1500) { lyingSaid = true; typeLine(["…and you're lying down, aren't you."], 'sub'); }
+      } else faceDownSince = 0;
+    }
+  }, 120);
+  if (d.battery && d.battery.addEventListener) {
+    d.battery.addEventListener('levelchange', () => { const e = $('batLvl'); if (e) e.textContent = Math.round(d.battery.level * 100) + '%'; });
+    d.battery.addEventListener('chargingchange', () => { const e = $('batChg'); if (e) e.textContent = d.battery.charging ? 'Charging right now.' : 'Not charging.'; });
+  }
+}
+
+/* ── dares ── */
+const dareList = $('dareList');
+let ended = false;
+function addDare(text) {
+  const el = document.createElement('div');
+  el.className = 'dare';
+  el.innerHTML = '<span class="mark">[ ]</span><span class="txt"></span>';
+  el.querySelector('.txt').textContent = text;
+  dareList.appendChild(el);
+  return el;
+}
+function completeDare(el, doneText) {
+  if (el.classList.contains('done')) return;
+  el.classList.add('done');
+  el.querySelector('.mark').textContent = '[✓]';
+  if (doneText != null) el.querySelector('.txt').textContent = doneText;
+  buzz([70, 40, 120]);
+  if (!ended) setTimeout(revealEnd, 1000);
+}
+
+function motionDares() {
+  const startSideways = motion.sideways;
+  const side = addDare(startSideways ? 'Turn your phone upright.' : 'Turn your phone sideways.');
+  const shake = addDare('Shake it.');
+  motion.shake = false;
+  const iv = setInterval(() => {
+    if (motion.sideways !== startSideways) completeDare(side, startSideways ? 'Upright. Yep.' : 'Sideways. Yep.');
+    if (motion.shake) completeDare(shake, 'Felt that.');
+    if (side.classList.contains('done') && shake.classList.contains('done')) clearInterval(iv);
+  }, 120);
+}
+
+/* exact location — only if they tap Allow. Never guessed. */
+let located = false;
+async function reverseGeocode(lat, lng) {
+  const get = async (url, map) => {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 4500);
+      const r = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(t);
+      return map(await r.json()) || null;
+    } catch (e) { return null; }
+  };
+  // OpenStreetMap first: it knows neighbourhoods and streets (e.g. "Market Circle, Chapel Hill, Takoradi").
+  return await get('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lng + '&zoom=17', j => {
+      const a = j.address || {};
+      return [a.road, a.suburb || a.neighbourhood || a.quarter, a.city || a.town || a.village || a.municipality].filter(Boolean).join(', ');
+    })
+    || await get('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + lat + '&longitude=' + lng + '&localityLanguage=en', j => {
+      const parts = [j.locality, j.city].filter(Boolean);
+      if (parts.length === 2 && parts[0] === parts[1]) parts.pop();
+      return parts.join(', ') || j.principalSubdivision;
+    });
+}
+function locationDare() {
+  if (!navigator.geolocation) return 0;
+  const el = addDare('Want me to show you exactly where you are? ');
+  const txt = el.querySelector('.txt');
+  const btn = document.createElement('button');
+  btn.className = 'btn small'; btn.textContent = '> Go on then';
+  txt.appendChild(btn);
+  btn.onclick = () => {
+    btn.disabled = true; btn.textContent = '> Looking…';
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const lat = pos.coords.latitude, lng = pos.coords.longitude, accuracy = pos.coords.accuracy || 0;
+      const place = await reverseGeocode(lat, lng);
+      const acc = accuracy >= 1000 ? 'about ' + (accuracy / 1000).toFixed(1) + ' km' : 'within ' + Math.max(5, Math.round(accuracy)) + ' metres';
+      txt.textContent = (place ? "You're near " + place + '. ' : "You're at " + lat.toFixed(5) + ', ' + lng.toFixed(5) + '. ') + 'I can see you to ' + acc + '. ';
+      const a = document.createElement('a');
+      a.href = 'https://www.google.com/maps?q=' + lat + ',' + lng; a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = 'See it on the map →';
+      txt.appendChild(a);
+      located = true;
+      const note = $('locNote');
+      if (note) note.textContent = "Your exact location? Only because you tapped Allow just now. That's the one thing a website has to ask for — so think before you tap it.";
+      completeDare(el, null);
+    }, err => {
+      el.classList.add('off');
+      txt.textContent = err.code === 1 ? 'You said no. Smart.' : "Your phone won't tell me. Fine.";
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+  };
+  return 1;
+}
+
+function buildDares(d) {
+  let n = 0;
+  const b = d.battery;
+  if (b && typeof b.charging === 'boolean' && b.addEventListener && isMobile) {
+    n++;
+    const wasCharging = b.charging;
+    const el = addDare(wasCharging ? 'Unplug your charger.' : 'Plug in your charger.');
+    b.addEventListener('chargingchange', () => {
+      if (b.charging !== wasCharging) completeDare(el, wasCharging ? 'Unplugged. Felt that.' : 'Charging. Told you.');
+    });
+  }
+  if (motion.seen) { n += 2; motionDares(); }
+  else if (needsMotionPermission) {
+    n++;
+    const el = addDare('');
+    const btn = document.createElement('button');
+    btn.className = 'btn small'; btn.textContent = '> Let me feel your phone';
+    el.querySelector('.txt').appendChild(btn);
+    btn.onclick = async () => {
+      let ok = false;
+      try { ok = (await DeviceMotionEvent.requestPermission()) === 'granted'; } catch (e) {}
+      if (ok) {
+        window.addEventListener('devicemotion', onMotion);
+        await sleep(600);
+        el.remove();
+        if (motion.seen) motionDares();
+        else { const x = addDare('Hm. Your phone is keeping quiet.'); x.classList.add('off'); }
+      } else { el.classList.add('off'); el.querySelector('.txt').textContent = 'You said no. Fair enough.'; }
+    };
+  }
+  const mq = matchMedia('(prefers-color-scheme: dark)');
+  {
+    n++;
+    const wasDark = mq.matches;
+    const el = addDare(wasDark ? 'Switch your phone to light mode.' : 'Switch your phone to dark mode.');
+    const h = () => { if (mq.matches !== wasDark) completeDare(el, wasDark ? 'Light mode. Saw that.' : 'Dark mode. Saw that.'); };
+    if (mq.addEventListener) mq.addEventListener('change', h); else mq.addListener(h);
+  }
+  const c = navigator.connection;
+  if (c && c.type && (c.type === 'wifi' || c.type === 'cellular')) {
+    n++;
+    const wasWifi = c.type === 'wifi';
+    const el = addDare(wasWifi ? 'Turn your WiFi off.' : 'Turn your WiFi on.');
+    c.addEventListener('change', () => {
+      const nowWifi = c.type === 'wifi';
+      if (nowWifi !== wasWifi) completeDare(el, nowWifi ? 'You just switched to WiFi.' : 'You just switched to mobile data.');
+    });
+  }
+  n += locationDare();
+  return n;
+}
+
+function revealEnd() {
+  if (ended) return;
+  ended = true;
+  const end = $('end');
+  end.hidden = false;
+  setTimeout(() => end.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }), 60);
+}
+
+/* ── share ── */
+function setupShare() {
+  const url = location.origin + location.pathname;
+  $('waShare').href = 'https://wa.me/?text=' + encodeURIComponent(CONFIG.shareText + '\n' + url);
+  const other = $('otherShare');
+  if (navigator.share) other.textContent = '> Share another way';
+  other.onclick = async () => {
+    try {
+      if (navigator.share) await navigator.share({ title: document.title, text: CONFIG.shareText, url });
+      else { await navigator.clipboard.writeText(url); other.textContent = '> Copied. Now paste it somewhere evil.'; }
+    } catch (e) {
+      try { await navigator.clipboard.writeText(url); other.textContent = '> Copied. Now paste it somewhere evil.'; } catch (e2) { prompt('Copy this link:', url); }
+    }
+  };
+  const foot = $('foot');
+  foot.textContent = 'Built by ' + CONFIG.madeBy + '. ';
+  if (CONFIG.whatsappNumber) {
+    const a = document.createElement('a');
+    a.href = 'https://wa.me/' + CONFIG.whatsappNumber.replace(/\D/g, '') + '?text=' + encodeURIComponent('How did you do that?? 😳');
+    a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Ask me how →';
+    foot.appendChild(a);
+  }
+}
+
+/* ── main ── */
+async function run() {
+  setupShare();
+  const d = await gather();
+  const conn = $('conn');
+  conn.classList.remove('cursor');
+  conn.textContent = 'Connected.';
+  await sleep(skip ? 0 : 350);
+
+  const flash = $('flash');
+  if (!reduced) flash.classList.add('go');
+  await typeLine(['Found you.'], 'found');
+
+  const lines = buildLines(d);
+  if (!lines.length) await typeLine(["Your browser is hiding you well. Respect."], 'dim');
+  for (const l of lines) await typeLine(l.parts, l.cls);
+  startLive(d);
+
+  await sleep(skip ? 0 : 500);
+  const doubt = $('doubt');
+  doubt.hidden = false;
+  doubt.onclick = () => {
+    buzz([120, 60, 120, 60, 320]);
+    doubt.hidden = true;
+    const n = buildDares(d);
+    if (n) { $('dares').hidden = false; $('believe').onclick = revealEnd; }
+    else revealEnd();
+  };
+}
+run();
+</script>
+</body>
+</html>

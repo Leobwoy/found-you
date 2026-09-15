@@ -106,7 +106,13 @@
   @keyframes hit { from { background: rgba(57,255,20,.22); } to { background: transparent; } }
   .linkish { background: none; border: 0; padding: 0; margin-top: 16px; font: inherit; color: var(--dim); text-decoration: underline; cursor: pointer; }
 
-  #end { margin: 0; }
+  #end { margin: 0; padding-bottom: 55vh; }   /* room to keep the typing line mid-screen right to the end */
+  /* the "hand": a screen-recording style touch indicator that swipes the page up */
+  #finger {
+    position: fixed; left: 0; top: 0; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%;
+    background: rgba(255,255,255,.28); border: 2px solid rgba(255,255,255,.55); box-shadow: 0 0 14px rgba(0,0,0,.5);
+    opacity: 0; pointer-events: none; z-index: 4; transition: opacity .15s;
+  }
   .line.edu { color: #dfffe6; margin-bottom: .75em; }
   .line.edu.lead { font-weight: 700; font-size: 1.15em; }
   .line.edu.tip { padding-left: 1.6em; text-indent: -1.6em; }
@@ -125,6 +131,7 @@
 <body>
 <canvas id="rain"></canvas>
 <div id="flash"></div>
+<div id="finger"></div>
 <main>
   <div id="log">
     <p class="line dim cursor" id="conn">&gt; connecting to target<span class="dots"></span></p>
@@ -168,9 +175,8 @@ const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' 
 const isAndroid = /Android/.test(ua) || (uad && uad.platform === 'Android');
 const isMobile = isIOS || isAndroid || (uad && uad.mobile);
 
-/* tap anywhere = fast-forward the typing (a real tap, not a scroll: scrolling never becomes a click) */
-let skip = false;
-document.addEventListener('click', () => { skip = true; });
+/* no fast-forward: an accidental touch must never dump the text */
+const skip = false;
 
 /* ── matrix rain ── */
 (function rain() {
@@ -192,6 +198,36 @@ document.addEventListener('click', () => { skip = true; });
     }
   }, 70);
 })();
+
+/* ── the hand: swipes the page up so the typing line stays around mid-screen ── */
+let swiping = false, userScrollUntil = 0;
+addEventListener('scroll', () => { if (!swiping) userScrollUntil = Date.now() + 5000; }, { passive: true });   // the reader scrolled: back off
+function swipeTo(el, edge, target) {
+  edge = edge || 'bottom'; target = target == null ? 0.42 : target;
+  if (swiping || reduced || Date.now() < userScrollUntil) return;
+  const r = el.getBoundingClientRect();
+  const delta = Math.min(r[edge] - innerHeight * target, innerHeight * 0.6);        // one swipe at a time, like a thumb would
+  if (delta < 24) return;
+  const maxScroll = document.documentElement.scrollHeight - innerHeight;
+  const from = scrollY, to = Math.min(maxScroll, from + delta);
+  if (to - from < 8) return;
+  swiping = true;
+  const f = $('finger');
+  const x = innerWidth * 0.62, y0 = innerHeight * 0.74, dist = to - from;
+  f.style.transform = 'translate(' + x + 'px, ' + y0 + 'px) scale(.7)';
+  f.style.opacity = '1';
+  const dur = 460 + Math.random() * 140;
+  let t0 = null;
+  requestAnimationFrame(function step(now) {
+    if (t0 === null) t0 = now;
+    const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3);
+    window.scrollTo(0, from + dist * e);
+    f.style.transform = 'translate(' + x + 'px, ' + (y0 - dist * e) + 'px) scale(1)';
+    if (t < 1) requestAnimationFrame(step);
+    else { f.style.opacity = '0'; setTimeout(() => { swiping = false; }, 250); }
+  });
+}
+function keepInView(el) { if (el.getBoundingClientRect().bottom > innerHeight * 0.56) swipeTo(el); }
 
 /* ── typing engine ── */
 const GLYPHS = '0123456789ABCDEF#$%&@!?<>[]{}/\\|=+*';
@@ -216,9 +252,6 @@ function logLine(text, cls) {                   // instant line, no typing
 async function typeLine(parts, cls, opts) {
   opts = opts || {};
   const pace = opts.pace || 1;
-  const nearBottom = () => innerHeight + scrollY >= document.body.scrollHeight - 160;
-  const follow = () => { if (nearBottom()) window.scrollTo(0, document.body.scrollHeight); };
-  let following = nearBottom();
   const p = document.createElement('p');
   p.className = 'line' + (cls ? ' ' + cls : '');
   (opts.target || log).appendChild(p);
@@ -242,13 +275,13 @@ async function typeLine(parts, cls, opts) {
         due += (/[.!?—]/.test(ch) ? 110 : /[,;:]/.test(ch) ? 50 : 9 + Math.random() * 12) * pace;
       }
       span.textContent = text.slice(0, i);
-      if (following) follow();
+      keepInView(p);
       if (skip) { span.textContent = text; break; }
       if (i < text.length) await sleep(Math.max(0, due - performance.now()));
     }
   }
   p.classList.remove('cursor');
-  if (following) follow();
+  keepInView(p);
   await sleep(skip || reduced ? 0 : (opts.gap || 200));
 }
 
@@ -664,9 +697,8 @@ async function revealEnd(byTap) {
   const end = $('end');
   end.hidden = false;
   await sleep(reduced ? 0 : 700);
-  skip = false;                                   // reset AFTER the tap that got us here has finished bubbling, or it fast-forwards the lesson
   const target = $('endLog');
-  for (const l of LESSON) await typeLine(l.parts, 'edu' + (l.cls ? ' ' + l.cls : ''), { target, pace: 2, gap: l.gap });
+  for (const l of LESSON) await typeLine(l.parts, 'edu' + (l.cls ? ' ' + l.cls : ''), { target, pace: 3.5, gap: l.gap });
   $('endActions').hidden = false;
 }
 
@@ -743,7 +775,7 @@ async function run() {
     buzz([120, 60, 120, 60, 320]);
     doubt.hidden = true;
     const n = buildDares(d);
-    if (n) { $('dares').hidden = false; $('believe').onclick = () => revealEnd(true); }
+    if (n) { $('dares').hidden = false; $('believe').onclick = () => revealEnd(true); setTimeout(() => swipeTo($('dares'), 'top', 0.12), 350); }
     else revealEnd(true);
   };
 }

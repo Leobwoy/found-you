@@ -15,107 +15,127 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 
-<meta name="theme-color" content="#050505">
+<meta name="theme-color" content="#020402">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%91%81%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
 
 <style>
   :root {
-    --bg: #050505;
-    --fg: #d9d9d9;
-    --dim: #6b7280;
-    --line: #232323;
-    --green: #4ade80;
-    --red: #f87171;
-    --amber: #fbbf24;
+    --bg: #020402;
+    --fg: #b9f5c6;
+    --dim: #3f8a52;
+    --line: #113d1d;
+    --green: #39ff14;
+    --red: #ff3b3b;
+    --amber: #ffd23f;
     --wa: #25d366;
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { margin: 0; background: var(--bg); color: var(--fg); }
   body {
-    font: 15px/1.7 ui-monospace, Menlo, Consolas, "Roboto Mono", "Droid Sans Mono", monospace;
+    font: 16px/1.6 'Share Tech Mono', ui-monospace, Menlo, Consolas, "Droid Sans Mono", monospace;
     -webkit-font-smoothing: antialiased;
     min-height: 100dvh;
-    padding: calc(22px + env(safe-area-inset-top)) 20px calc(32px + env(safe-area-inset-bottom));
+    padding: calc(22px + env(safe-area-inset-top)) 18px calc(32px + env(safe-area-inset-bottom));
     overflow-x: hidden;
   }
-  /* faint scanlines */
+  #rain { position: fixed; inset: 0; z-index: 0; opacity: .32; pointer-events: none; }
+  /* CRT scanlines */
   body::before {
     content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 2;
-    background: repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 1px, transparent 1px 3px);
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px);
   }
-  main { max-width: 520px; margin: 0 auto; position: relative; z-index: 1; }
+  main { max-width: 540px; margin: 0 auto; position: relative; z-index: 1; }
 
-  .line { margin: 0 0 .45em; white-space: pre-wrap; word-break: break-word; }
+  .line { margin: 0 0 .4em; white-space: pre-wrap; word-break: break-word; }
   .line.dim { color: var(--dim); }
-  .line.found { color: var(--red); font-weight: 700; font-size: 1.45em; margin: .5em 0 .7em; letter-spacing: .01em; }
-  .line.sub { color: var(--dim); margin-top: -.2em; }
-  .v { color: var(--green); }
-  .live { color: var(--amber); font-weight: 700; display: inline-block; min-width: 2ch; }
-  .cursor::after {
-    content: "\258E"; color: var(--green); margin-left: 2px;
-    animation: blink 1s steps(2, start) infinite;
-  }
+  .line.ok { color: var(--green); font-weight: 700; }
+  .line.sub { color: var(--dim); margin-top: -.15em; }
+  .pre { color: var(--dim); }
+  .v { color: var(--green); text-shadow: 0 0 8px rgba(57,255,20,.35); }
+  .live { color: var(--amber); font-weight: 700; display: inline-block; min-width: 2ch; text-shadow: 0 0 8px rgba(255,210,63,.4); }
+  .cursor::after { content: "\2588"; color: var(--green); margin-left: 2px; animation: blink .9s steps(2, start) infinite; }
   @keyframes blink { to { visibility: hidden; } }
   .dots::after { content: ""; animation: dots 1.2s steps(4, end) infinite; }
   @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
 
-  #flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 3; }
+  .line.found {
+    font-family: 'VT323', 'Share Tech Mono', monospace; font-size: 2.6em; line-height: 1.05;
+    color: var(--red); text-transform: uppercase; letter-spacing: .04em; margin: .3em 0 .45em;
+    text-shadow: 0 0 14px rgba(255,59,59,.55);
+    animation: glitch 2.8s infinite;
+  }
+  @keyframes glitch {
+    0%, 88%, 100% { transform: none; text-shadow: 0 0 14px rgba(255,59,59,.55); }
+    90% { transform: translate(2px, -1px); text-shadow: -3px 0 #0ff, 3px 0 #f0f; }
+    92% { transform: translate(-2px, 1px); text-shadow: 3px 0 #0ff, -3px 0 #f0f; }
+    94% { transform: none; text-shadow: 0 0 14px rgba(255,59,59,.55); }
+    96% { transform: translate(1px, 0); text-shadow: -2px 0 #0ff, 2px 0 #f0f; }
+  }
+
+  #flash { position: fixed; inset: 0; background: #d6ffe0; opacity: 0; pointer-events: none; z-index: 3; }
   #flash.go { animation: flash .45s ease-out both; }
   @keyframes flash { from { opacity: .85; } to { opacity: 0; } }
 
   .btn {
     display: block; width: 100%; margin-top: 22px; padding: 14px 16px;
-    background: transparent; color: var(--green); border: 1px solid var(--green); border-radius: 8px;
-    font: inherit; font-weight: 700; text-align: left; cursor: pointer; text-decoration: none;
+    background: rgba(57,255,20,.04); color: var(--green); border: 1px solid var(--green); border-radius: 4px;
+    font: inherit; text-transform: uppercase; letter-spacing: .08em; text-align: left; cursor: pointer; text-decoration: none;
+    box-shadow: 0 0 12px rgba(57,255,20,.12), inset 0 0 12px rgba(57,255,20,.05);
     -webkit-tap-highlight-color: transparent;
   }
-  .btn:active { background: rgba(74,222,128,.12); }
-  .btn.wa { background: var(--wa); border-color: var(--wa); color: #04140a; }
-  .btn.ghost { color: var(--fg); border-color: var(--line); font-weight: 400; }
+  .btn:active { background: rgba(57,255,20,.16); }
+  .btn.wa { background: var(--wa); border-color: var(--wa); color: #03140a; font-weight: 700; box-shadow: 0 0 14px rgba(37,211,102,.35); }
+  .btn.ghost { color: var(--fg); border-color: var(--line); box-shadow: none; }
   .btn.small { display: inline-block; width: auto; margin: 0; padding: 8px 12px; }
 
   .fade { animation: fade .5s ease-out both; }
   @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-  #dares h2 { font: inherit; color: var(--fg); margin: 24px 0 6px; }
-  .dare { display: flex; gap: 12px; padding: 11px 0; border-top: 1px dashed var(--line); }
+  #dares h2 { font: inherit; color: var(--fg); margin: 26px 0 6px; }
+  .dare { display: flex; gap: 12px; padding: 11px 6px; margin: 0 -6px; border-top: 1px dashed var(--line); border-radius: 3px; }
   .dare .mark { color: var(--dim); flex: none; }
   .dare .txt { flex: 1; }
-  .dare.done .mark { color: var(--green); }
+  .dare.done .mark { color: var(--green); text-shadow: 0 0 8px rgba(57,255,20,.4); }
   .dare.done .txt { color: var(--green); }
   .dare.off .txt { color: var(--dim); }
-  .dare .txt a { color: var(--amber); }
+  .dare.hit { animation: hit .7s ease-out; }
+  @keyframes hit { from { background: rgba(57,255,20,.22); } to { background: transparent; } }
   .linkish { background: none; border: 0; padding: 0; margin-top: 16px; font: inherit; color: var(--dim); text-decoration: underline; cursor: pointer; }
 
   #end { margin-top: 30px; border-top: 1px solid var(--line); padding-top: 20px; }
-  #end p { margin: 0 0 .9em; color: #fff; }
+  #end p { margin: 0 0 .9em; color: #eafff0; }
   #end p.lead { font-weight: 700; font-size: 1.15em; }
   #end p.dim { color: var(--dim); }
-  #end ul { margin: -.4em 0 1em; padding-left: 1.4em; color: #fff; }
+  #end ul { margin: -.4em 0 1em; padding-left: 1.4em; color: #eafff0; }
   #end .btn + .btn { margin-top: 10px; }
-  footer { margin-top: 28px; color: var(--dim); font-size: .9em; }
+  footer { margin-top: 28px; color: var(--dim); font-size: .92em; }
   footer a { color: var(--green); }
 
   @media (prefers-reduced-motion: reduce) {
-    .cursor::after, .dots::after { animation: none; }
+    .cursor::after, .dots::after, .line.found, .dare.hit { animation: none; }
     .fade { animation: none; }
+    #rain { display: none; }
   }
 </style>
 </head>
 <body>
+<canvas id="rain"></canvas>
 <div id="flash"></div>
 <main>
   <div id="log">
-    <p class="line dim cursor" id="conn">Connecting<span class="dots"></span></p>
+    <p class="line dim cursor" id="conn">&gt; connecting to target<span class="dots"></span></p>
   </div>
 
-  <button class="btn fade" id="doubt" hidden>&gt; Still don't believe me?</button>
+  <button class="btn fade" id="doubt" hidden>[ still don't believe me? ]</button>
 
   <section id="dares" class="fade" hidden>
-    <h2>Fine. Do any of these. I'll know.</h2>
+    <h2>&gt; prove it. do any of these — I'll know.</h2>
     <div id="dareList"></div>
-    <button class="linkish" id="believe">okay okay, I believe you →</button>
+    <button class="linkish" id="believe">&gt; fine, I believe you. what is this?</button>
   </section>
 
   <section id="end" class="fade" hidden>
@@ -129,7 +149,7 @@
       <li>your photos</li>
       <li>your WhatsApp</li>
     </ul>
-    <p id="locNote">Your exact location? Only if you tap Allow. So don't.</p>
+    <p>Your exact location? A website only gets that if you tap "Allow". So don't.</p>
     <p class="dim">Nothing here was saved. Close this and it's gone.</p>
     <p class="lead" style="margin-top:1.4em">Now send it to someone who'd panic 😈</p>
     <a class="btn wa" id="waShare" href="#" target="_blank" rel="noopener">&gt; Send on WhatsApp</a>
@@ -143,7 +163,7 @@
 const CONFIG = {
   madeBy: 'Yaw',
   whatsappNumber: '',      // your number with country code, digits only, e.g. '233241234567'. Enables the "ask me how" button.
-  shareText: 'This page knew my phone model, my battery %, and roughly where I was 😳 Open it and see:',
+  shareText: 'This page knew my phone model, my battery %, and when I plugged in my charger 😳 Open it and see:',
 };
 /* ────────────────────────────────────── */
 
@@ -162,11 +182,53 @@ const isMobile = isIOS || isAndroid || (uad && uad.mobile);
 let skip = false;
 document.addEventListener('pointerdown', () => { skip = true; }, { passive: true });
 
+/* ── matrix rain ── */
+(function rain() {
+  const cv = $('rain'), ctx = cv.getContext('2d');
+  const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎ0123456789ABCDEF<>/\\|=+*';
+  const fs = 14;
+  let W, H, cols, drops;
+  function size() { W = cv.width = innerWidth; H = cv.height = innerHeight; cols = Math.ceil(W / fs); drops = Array.from({ length: cols }, () => Math.random() * -H / fs); }
+  size();
+  addEventListener('resize', size);
+  setInterval(() => {
+    if (document.hidden || reduced) return;
+    ctx.fillStyle = 'rgba(2,4,2,.2)'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#1f9a3e'; ctx.font = fs + 'px monospace';
+    for (let i = 0; i < cols; i++) {
+      ctx.fillText(chars[Math.random() * chars.length | 0], i * fs, drops[i] * fs);
+      if (drops[i] * fs > H && Math.random() > 0.97) drops[i] = 0;
+      drops[i] += 0.5;
+    }
+  }, 70);
+})();
+
 /* ── typing engine ── */
-async function typeLine(parts, cls) {
+const GLYPHS = '0123456789ABCDEF#$%&@!?<>[]{}/\\|=+*';
+async function scramble(span, text) {           // values "decrypt" into place
+  const frames = skip || reduced ? 0 : 7;
+  for (let f = 0; f < frames; f++) {
+    let s = '';
+    for (let i = 0; i < text.length; i++) s += text[i] === ' ' ? ' ' : GLYPHS[Math.random() * GLYPHS.length | 0];
+    span.textContent = s;
+    await sleep(38);
+    if (skip) break;
+  }
+  span.textContent = text;
+}
+function logLine(text, cls) {                   // instant line, no typing
+  const p = document.createElement('p');
+  p.className = 'line' + (cls ? ' ' + cls : '');
+  p.textContent = text;
+  log.appendChild(p);
+  return p;
+}
+async function typeLine(parts, cls, opts) {
+  opts = opts || {};
   const p = document.createElement('p');
   p.className = 'line' + (cls ? ' ' + cls : '');
   log.appendChild(p);
+  if (opts.prefix !== false) { const pre = document.createElement('span'); pre.className = 'pre'; pre.textContent = '> '; p.appendChild(pre); }
   p.classList.add('cursor');
   for (const part of parts) {
     const obj = typeof part === 'object';
@@ -176,6 +238,7 @@ async function typeLine(parts, cls) {
     if (obj && part.id) span.id = part.id;
     p.appendChild(span);
     if (skip || reduced) { span.textContent = text; continue; }
+    if (obj && part.cls === 'v') { await scramble(span, text); continue; }
     // time-based, so if the browser throttles timers (hidden tab, slow phone) the text catches up instead of crawling
     let i = 0, due = performance.now();
     while (i < text.length) {
@@ -195,7 +258,7 @@ async function typeLine(parts, cls) {
 }
 
 /* ── motion (Android: no permission needed; iOS: asked later, as a dare) ── */
-const motion = { seen: false, tilt: 0, faceDown: false, sideways: false, shake: false, dirty: false };
+const motion = { seen: false, tilt: 0, faceDown: false, sideways: false, shake: false, dirty: false, last: null };
 function onMotion(e) {
   const g = e.accelerationIncludingGravity;
   if (!g || g.x == null) return;
@@ -204,16 +267,23 @@ function onMotion(e) {
   motion.seen = true;
   motion.tilt = Math.round(Math.acos(Math.min(1, Math.abs(g.z) / mag)) * 180 / Math.PI); // 0 = flat, 90 = upright
   motion.faceDown = g.z < -3;
-  motion.sideways = Math.abs(g.x) > 6 && Math.abs(g.x) > Math.abs(g.y);
+  if (Math.abs(g.x) > 7 && Math.abs(g.x) > Math.abs(g.y)) motion.sideways = true;   // hysteresis: only flip when clearly one or the other
+  else if (Math.abs(g.y) > 7) motion.sideways = false;
+  // shake = big change between consecutive readings (the classic shake.js approach), or a big jolt without gravity
+  if (motion.last) {
+    const delta = Math.abs(g.x - motion.last.x) + Math.abs(g.y - motion.last.y) + Math.abs(g.z - motion.last.z);
+    if (delta > 15) motion.shake = true;
+  }
+  motion.last = { x: g.x, y: g.y, z: g.z };
   const a = e.acceleration;
-  const jolt = (a && a.x != null) ? Math.hypot(a.x, a.y, a.z) : Math.abs(mag - 9.81);
-  if (jolt > 16) motion.shake = true;
+  if (a && a.x != null && Math.hypot(a.x, a.y, a.z) > 12) motion.shake = true;
   motion.dirty = true;
 }
 const needsMotionPermission = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';
-window.addEventListener('devicemotion', onMotion);   // fires straight away on Android; on iOS only after permission (asked later, as a dare)
+window.addEventListener('devicemotion', onMotion);   // fires straight away on Android; on iOS only after permission
 
 /* ── data gathering ── */
+let ipInflight = false;
 async function lookupIP() {
   const sources = [
     ['https://ipwho.is/', j => j && j.success !== false && j.ip && {
@@ -224,17 +294,20 @@ async function lookupIP() {
     ['https://ipinfo.io/json', j => j && j.ip && {
       ip: j.ip, city: j.city, region: j.region, country: j.country, isp: (j.org || '').replace(/^AS\d+\s+/, '') }],
   ];
-  for (const [url, map] of sources) {
-    try {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 2500);
-      const r = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
-      clearTimeout(t);
-      const out = map(await r.json());
-      if (out) return out;
-    } catch (e) { /* try the next one */ }
-  }
-  return null;
+  ipInflight = true;
+  try {
+    for (const [url, map] of sources) {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 2500);
+        const r = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+        clearTimeout(t);
+        const out = map(await r.json());
+        if (out) return out;
+      } catch (e) { /* try the next one */ }
+    }
+    return null;
+  } finally { ipInflight = false; }
 }
 
 async function gather() {
@@ -329,7 +402,6 @@ function browserName() {
 }
 
 function describeDevice(h) {
-  // returns typed parts for the first line, or null
   const model = (h && h.model) || (() => {
     const m = /Android [^;]+; ([^;)]+?)(?: Build|\))/.exec(ua);        // non-reduced user agents still carry the model
     return m && m[1] !== 'K' ? m[1] : null;
@@ -386,6 +458,11 @@ function brandName(isp) {
   return isp.replace(/\s+(Limited|Ltd\.?|PLC|Inc\.?|LLC|S\.?A\.?)$/i, '');
 }
 
+function connType() {
+  const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  return c && (c.type === 'wifi' || c.type === 'cellular') ? c.type : null;
+}
+
 function buildLines(d) {
   const L = [];
   const dev = describeDevice(d.hints);
@@ -393,11 +470,10 @@ function buildLines(d) {
 
   if (d.battery && typeof d.battery.level === 'number') L.push({ parts: batteryParts(d.battery) });
 
-  const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   // Only what the connection reliably tells us: WiFi vs mobile data, the carrier, the country.
   // (No city: mobile networks route everyone through a few gateways, so IP-based city is usually wrong.
   //  No "3G/4G": the browser only estimates connection quality, not the radio.)
-  const type = c && c.type ? ({ cellular: 'mobile data', wifi: 'WiFi', ethernet: 'a cable', bluetooth: 'Bluetooth', wimax: 'WiMAX' }[c.type] || null) : null;
+  const type = { cellular: 'mobile data', wifi: 'WiFi' }[connType()] || null;
   const isp = d.geo && d.geo.isp ? brandName(d.geo.isp) : null;
   const country = d.geo && d.geo.country ? [', in ', { text: d.geo.country, cls: 'v' }] : [];
   if (type && isp) L.push({ parts: ['On ', { text: type, cls: 'v' }, ' through ', { text: isp, cls: 'v' }, ...country, '.'] });
@@ -412,7 +488,7 @@ function buildLines(d) {
     const w = Math.round(Math.min(screen.width, screen.height) * devicePixelRatio), h = Math.round(Math.max(screen.width, screen.height) * devicePixelRatio);
     if (w && h) specs.push({ text: w + '×' + h + ' screen', cls: 'v' });
   } else if (screen.width) specs.push({ text: screen.width + '×' + screen.height + ' screen', cls: 'v' });
-  // (No language or timezone: "American English" and "Africa/Accra" are technically true but read as wrong.)
+  // (No RAM, language or timezone: the browser rounds RAM, and "American English" / "Africa/Accra" read as wrong even when true.)
   specs.push({ text: matchMedia('(prefers-color-scheme: dark)').matches ? 'Dark mode on' : 'Light mode on', cls: 'v' });
   L.push({ parts: specs.flatMap((s, i) => i ? ['. ', s] : [s]).concat(['.']) });
 
@@ -439,8 +515,11 @@ function startLive(d) {
   }
 }
 
-/* ── dares ── */
+/* ── dares: every one works both ways, and keeps catching every toggle ── */
 const dareList = $('dareList');
+const dareEls = [];
+const quips = ['Told you.', 'Caught that too.', 'Still watching.', 'I can do this all day.', 'Yep.', 'Saw it.'];
+let quipN = 0;
 let ended = false;
 function addDare(text) {
   const el = document.createElement('div');
@@ -448,140 +527,119 @@ function addDare(text) {
   el.innerHTML = '<span class="mark">[ ]</span><span class="txt"></span>';
   el.querySelector('.txt').textContent = text;
   dareList.appendChild(el);
+  dareEls.push(el);
   return el;
 }
-function completeDare(el, doneText) {
-  if (el.classList.contains('done')) return;
-  el.classList.add('done');
-  el.querySelector('.mark').textContent = '[✓]';
-  if (doneText != null) el.querySelector('.txt').textContent = doneText;
+function catchDare(el, what, next) {
+  if (!el.dataset.done) { el.dataset.done = '1'; el.classList.add('done'); el.querySelector('.mark').textContent = '[✓]'; }
+  el.querySelector('.txt').textContent = what + ' ' + quips[quipN++ % quips.length] + (next ? ' ' + next : '');
+  el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit');
   buzz([70, 40, 120]);
-  if (!ended) setTimeout(revealEnd, 1000);
+  if (!ended && dareEls.every(x => x.dataset.done)) revealEnd(false);   // all caught → show the ending, but never yank the page
 }
 
 function motionDares() {
-  const startSideways = motion.sideways;
-  const side = addDare(startSideways ? 'Turn your phone upright.' : 'Turn your phone sideways.');
+  let wasSide = motion.sideways;
+  const side = addDare(wasSide ? 'Turn your phone upright.' : 'Turn your phone sideways.');
   const shake = addDare('Shake it.');
   motion.shake = false;
-  const iv = setInterval(() => {
-    if (motion.sideways !== startSideways) completeDare(side, startSideways ? 'Upright. Yep.' : 'Sideways. Yep.');
-    if (motion.shake) completeDare(shake, 'Felt that.');
-    if (side.classList.contains('done') && shake.classList.contains('done')) clearInterval(iv);
+  let lastShake = 0;
+  setInterval(() => {
+    if (motion.sideways !== wasSide) {
+      wasSide = motion.sideways;
+      catchDare(side, wasSide ? 'Sideways.' : 'Upright.', wasSide ? 'Now back upright.' : 'Sideways again?');
+    }
+    if (motion.shake) {
+      motion.shake = false;
+      if (Date.now() - lastShake > 1500) { lastShake = Date.now(); catchDare(shake, 'Felt that.', 'Again. I dare you.'); }
+    }
   }, 120);
 }
 
-/* exact location — only if they tap Allow. Never guessed. */
-let located = false;
-async function reverseGeocode(lat, lng) {
-  const get = async (url, map) => {
-    try {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 4500);
-      const r = await fetch(url, { signal: ctrl.signal });
-      clearTimeout(t);
-      return map(await r.json()) || null;
-    } catch (e) { return null; }
-  };
-  // OpenStreetMap first: it knows neighbourhoods and streets (e.g. "Market Circle, Chapel Hill, Takoradi").
-  return await get('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lng + '&zoom=17', j => {
-      const a = j.address || {};
-      return [a.road, a.suburb || a.neighbourhood || a.quarter, a.city || a.town || a.village || a.municipality].filter(Boolean).join(', ');
-    })
-    || await get('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + lat + '&longitude=' + lng + '&localityLanguage=en', j => {
-      const parts = [j.locality, j.city].filter(Boolean);
-      if (parts.length === 2 && parts[0] === parts[1]) parts.pop();
-      return parts.join(', ') || j.principalSubdivision;
-    });
-}
-function locationDare() {
-  if (!navigator.geolocation) return 0;
-  const el = addDare('Want me to show you exactly where you are? ');
-  const txt = el.querySelector('.txt');
-  const btn = document.createElement('button');
-  btn.className = 'btn small'; btn.textContent = '> Go on then';
-  txt.appendChild(btn);
-  btn.onclick = () => {
-    btn.disabled = true; btn.textContent = '> Looking…';
-    navigator.geolocation.getCurrentPosition(async pos => {
-      const lat = pos.coords.latitude, lng = pos.coords.longitude, accuracy = pos.coords.accuracy || 0;
-      const place = await reverseGeocode(lat, lng);
-      const acc = accuracy >= 1000 ? 'about ' + (accuracy / 1000).toFixed(1) + ' km' : 'within ' + Math.max(5, Math.round(accuracy)) + ' metres';
-      txt.textContent = (place ? "You're near " + place + '. ' : "You're at " + lat.toFixed(5) + ', ' + lng.toFixed(5) + '. ') + 'I can see you to ' + acc + '. ';
-      const a = document.createElement('a');
-      a.href = 'https://www.google.com/maps?q=' + lat + ',' + lng; a.target = '_blank'; a.rel = 'noopener';
-      a.textContent = 'See it on the map →';
-      txt.appendChild(a);
-      located = true;
-      const note = $('locNote');
-      if (note) note.textContent = "Your exact location? Only because you tapped Allow just now. That's the one thing a website has to ask for — so think before you tap it.";
-      completeDare(el, null);
-    }, err => {
-      el.classList.add('off');
-      txt.textContent = err.code === 1 ? 'You said no. Smart.' : "Your phone won't tell me. Fine.";
-    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
-  };
-  return 1;
-}
-
 function buildDares(d) {
-  let n = 0;
   const b = d.battery;
   if (b && typeof b.charging === 'boolean' && b.addEventListener && isMobile) {
-    n++;
-    const wasCharging = b.charging;
-    const el = addDare(wasCharging ? 'Unplug your charger.' : 'Plug in your charger.');
+    let was = b.charging;
+    const el = addDare(was ? 'Unplug your charger.' : 'Plug in your charger.');
     b.addEventListener('chargingchange', () => {
-      if (b.charging !== wasCharging) completeDare(el, wasCharging ? 'Unplugged. Felt that.' : 'Charging. Told you.');
+      if (b.charging === was) return;
+      was = b.charging;
+      catchDare(el, was ? 'Charging.' : 'Unplugged.', was ? 'Now unplug it.' : 'Now plug it back in.');
     });
   }
-  if (motion.seen) { n += 2; motionDares(); }
+
+  if (motion.seen) motionDares();
   else if (needsMotionPermission) {
-    n++;
+    // iPhones make sites ask before they can feel the phone move. This is the only "Allow" on the page.
     const el = addDare('');
     const btn = document.createElement('button');
-    btn.className = 'btn small'; btn.textContent = '> Let me feel your phone';
+    btn.className = 'btn small'; btn.textContent = '[ let me feel your phone ]';
     el.querySelector('.txt').appendChild(btn);
     btn.onclick = async () => {
       let ok = false;
       try { ok = (await DeviceMotionEvent.requestPermission()) === 'granted'; } catch (e) {}
       if (ok) {
-        window.addEventListener('devicemotion', onMotion);
         await sleep(600);
-        el.remove();
+        el.remove(); dareEls.splice(dareEls.indexOf(el), 1);
         if (motion.seen) motionDares();
-        else { const x = addDare('Hm. Your phone is keeping quiet.'); x.classList.add('off'); }
-      } else { el.classList.add('off'); el.querySelector('.txt').textContent = 'You said no. Fair enough.'; }
+        else { const x = addDare('Hm. Your phone is keeping quiet.'); x.classList.add('off'); x.dataset.done = '1'; }
+      } else { el.classList.add('off'); el.dataset.done = '1'; el.querySelector('.txt').textContent = 'You said no. Fair enough.'; }
     };
   }
-  const mq = matchMedia('(prefers-color-scheme: dark)');
+
   {
-    n++;
-    const wasDark = mq.matches;
-    const el = addDare(wasDark ? 'Switch your phone to light mode.' : 'Switch your phone to dark mode.');
-    const h = () => { if (mq.matches !== wasDark) completeDare(el, wasDark ? 'Light mode. Saw that.' : 'Dark mode. Saw that.'); };
-    if (mq.addEventListener) mq.addEventListener('change', h); else mq.addListener(h);
+    const mq = matchMedia('(prefers-color-scheme: dark)');
+    let was = mq.matches;
+    const el = addDare(was ? 'Switch your phone to light mode.' : 'Switch your phone to dark mode.');
+    const check = () => {
+      if (mq.matches === was) return;
+      was = mq.matches;
+      catchDare(el, was ? 'Dark mode.' : 'Light mode.', was ? 'Now back to light.' : 'Now back to dark.');
+    };
+    if (mq.addEventListener) mq.addEventListener('change', check); else if (mq.addListener) mq.addListener(check);
+    setInterval(check, 700);   // some in-app browsers never fire the event
   }
-  const c = navigator.connection;
-  if (c && c.type && (c.type === 'wifi' || c.type === 'cellular')) {
-    n++;
-    const wasWifi = c.type === 'wifi';
-    const el = addDare(wasWifi ? 'Turn your WiFi off.' : 'Turn your WiFi on.');
-    c.addEventListener('change', () => {
-      const nowWifi = c.type === 'wifi';
-      if (nowWifi !== wasWifi) completeDare(el, nowWifi ? 'You just switched to WiFi.' : 'You just switched to mobile data.');
-    });
+
+  {
+    // WiFi ↔ mobile data. Two detectors: what the phone reports (Android), and the public IP, which changes
+    // when you move between the carrier and a WiFi network (works everywhere, incl. iPhone; checked for 90s).
+    const c = navigator.connection;
+    let type = connType();
+    if (type || (d.geo && d.geo.ip)) {
+      const el = addDare(type === 'wifi' ? 'Turn your WiFi off.' : 'Connect to WiFi.');
+      const gotIt = (nowWifi, viaIP) => catchDare(el,
+        nowWifi === null ? 'Your connection just changed.' : nowWifi ? 'You just switched to WiFi.' : 'Back on mobile data.',
+        nowWifi === null ? 'Switch it back?' : nowWifi ? 'Now turn it off again.' : 'Now WiFi again.');
+      if (c && type) {
+        const check = () => { const t = connType(); if (t && t !== type) { type = t; gotIt(t === 'wifi'); } };
+        c.addEventListener('change', check);
+        setInterval(check, 700);
+      }
+      if (d.geo && d.geo.ip) {
+        let lastIP = d.geo.ip, tries = 0;
+        const iv = setInterval(async () => {
+          if (++tries > 22) return clearInterval(iv);
+          if (ipInflight) return;
+          const g = await lookupIP();
+          if (g && g.ip && g.ip !== lastIP) {
+            lastIP = g.ip;
+            const t = connType();
+            if (t) type = t;
+            gotIt(t ? t === 'wifi' : null, true);
+          }
+        }, 4000);
+      }
+    }
   }
-  n += locationDare();
-  return n;
+  return dareEls.length;
 }
 
-function revealEnd() {
+function revealEnd(scroll) {
   if (ended) return;
   ended = true;
   const end = $('end');
   end.hidden = false;
-  setTimeout(() => end.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }), 60);
+  if (scroll) setTimeout(() => end.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }), 60);
 }
 
 /* ── share ── */
@@ -608,33 +666,57 @@ function setupShare() {
   }
 }
 
+/* ── boot sequence: narrates what the page is actually doing ── */
+async function boot(d) {
+  const conn = $('conn');
+  conn.classList.remove('cursor');
+  conn.textContent = '> connection established';
+  await sleep(skip ? 0 : 160);
+
+  const bar = logLine('> pulling device fingerprint ', 'dim');
+  const b = document.createElement('span');
+  bar.appendChild(b);
+  const W = 12;
+  for (let i = 0; i <= W && !skip && !reduced; i++) {
+    b.textContent = '[' + '█'.repeat(i) + '░'.repeat(W - i) + '] ' + Math.round(i / W * 100) + '%';
+    await sleep(45);
+  }
+  b.textContent = '[' + '█'.repeat(W) + '] 100%';
+
+  const sensors = [];
+  if (d.battery) sensors.push('battery');
+  if (motion.seen) sensors.push('motion');
+  if (connType() || d.geo) sensors.push('network');
+  logLine('> sensors online: ' + (sensors.length ? sensors.join(' · ') : 'none. you hide well.'), 'dim');
+  await sleep(skip ? 0 : 140);
+  if (d.geo && d.geo.ip) { logLine('> resolving ' + d.geo.ip, 'dim'); await sleep(skip ? 0 : 140); }
+  logLine('> access granted', 'ok');
+  await sleep(skip ? 0 : 420);
+}
+
 /* ── main ── */
 async function run() {
   setupShare();
   const d = await gather();
-  const conn = $('conn');
-  conn.classList.remove('cursor');
-  conn.textContent = 'Connected.';
-  await sleep(skip ? 0 : 350);
+  await boot(d);
 
-  const flash = $('flash');
-  if (!reduced) flash.classList.add('go');
-  await typeLine(['Found you.'], 'found');
+  if (!reduced) $('flash').classList.add('go');
+  await typeLine(['FOUND YOU.'], 'found', { prefix: false });
 
   const lines = buildLines(d);
   if (!lines.length) await typeLine(["Your browser is hiding you well. Respect."], 'dim');
   for (const l of lines) await typeLine(l.parts, l.cls);
   startLive(d);
 
-  await sleep(skip ? 0 : 500);
+  await sleep(skip ? 0 : 400);
   const doubt = $('doubt');
   doubt.hidden = false;
   doubt.onclick = () => {
     buzz([120, 60, 120, 60, 320]);
     doubt.hidden = true;
     const n = buildDares(d);
-    if (n) { $('dares').hidden = false; $('believe').onclick = revealEnd; }
-    else revealEnd();
+    if (n) { $('dares').hidden = false; $('believe').onclick = () => revealEnd(true); }
+    else revealEnd(true);
   };
 }
 run();

@@ -176,10 +176,17 @@ async function typeLine(parts, cls) {
     if (obj && part.id) span.id = part.id;
     p.appendChild(span);
     if (skip || reduced) { span.textContent = text; continue; }
-    for (const ch of text) {
-      span.textContent += ch;
+    // time-based, so if the browser throttles timers (hidden tab, slow phone) the text catches up instead of crawling
+    let i = 0, due = performance.now();
+    while (i < text.length) {
+      const now = performance.now();
+      while (i < text.length && due <= now) {
+        const ch = text[i++];
+        due += /[.!?—]/.test(ch) ? 110 : /[,;:]/.test(ch) ? 50 : 9 + Math.random() * 12;
+      }
+      span.textContent = text.slice(0, i);
       if (skip) { span.textContent = text; break; }
-      await sleep(/[.!?—]/.test(ch) ? 110 : /[,;:]/.test(ch) ? 50 : 9 + Math.random() * 12);
+      if (i < text.length) await sleep(Math.max(0, due - performance.now()));
     }
   }
   p.classList.remove('cursor');

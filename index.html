@@ -107,10 +107,10 @@
   .linkish { background: none; border: 0; padding: 0; margin-top: 16px; font: inherit; color: var(--dim); text-decoration: underline; cursor: pointer; }
 
   #end { margin-top: 30px; border-top: 1px solid var(--line); padding-top: 20px; }
-  #end p { margin: 0 0 .9em; color: #eafff0; }
-  #end p.lead { font-weight: 700; font-size: 1.15em; }
-  #end p.dim { color: var(--dim); }
-  #end ul { margin: -.4em 0 1em; padding-left: 1.4em; color: #eafff0; }
+  .line.edu { color: #dfffe6; margin-bottom: .75em; }
+  .line.edu.lead { font-weight: 700; font-size: 1.15em; }
+  .line.edu.tip { padding-left: 1.6em; text-indent: -1.6em; }
+  .k { color: var(--green); }
   #end .btn + .btn { margin-top: 10px; }
   footer { margin-top: 28px; color: var(--dim); font-size: .92em; }
   footer a { color: var(--green); }
@@ -138,23 +138,13 @@
     <button class="linkish" id="believe">&gt; fine, I believe you. what is this?</button>
   </section>
 
-  <section id="end" class="fade" hidden>
-    <p class="lead">Relax. I didn't hack you.</p>
-    <p>Every website you open can see all of this the second it loads. Google. That betting site. That link your uncle forwarded. All of them.</p>
-    <p>What none of them can see:</p>
-    <ul>
-      <li>your name</li>
-      <li>your number</li>
-      <li>your contacts</li>
-      <li>your photos</li>
-      <li>your WhatsApp</li>
-    </ul>
-    <p>Your exact location? A website only gets that if you tap "Allow". So don't.</p>
-    <p class="dim">Nothing here was saved. Close this and it's gone.</p>
-    <p class="lead" style="margin-top:1.4em">Now send it to someone who'd panic 😈</p>
-    <a class="btn wa" id="waShare" href="#" target="_blank" rel="noopener">&gt; Send on WhatsApp</a>
-    <button class="btn ghost" id="otherShare">&gt; Copy the link</button>
-    <footer id="foot"></footer>
+  <section id="end" hidden>
+    <div id="endLog"></div>
+    <div id="endActions" class="fade" hidden>
+      <a class="btn wa" id="waShare" href="#" target="_blank" rel="noopener">&gt; Send on WhatsApp</a>
+      <button class="btn ghost" id="otherShare">&gt; Copy the link</button>
+      <footer id="foot"></footer>
+    </div>
   </section>
 </main>
 
@@ -225,9 +215,11 @@ function logLine(text, cls) {                   // instant line, no typing
 }
 async function typeLine(parts, cls, opts) {
   opts = opts || {};
+  const pace = opts.pace || 1;
+  const nearBottom = innerHeight + scrollY >= document.body.scrollHeight - 160;
   const p = document.createElement('p');
   p.className = 'line' + (cls ? ' ' + cls : '');
-  log.appendChild(p);
+  (opts.target || log).appendChild(p);
   if (opts.prefix !== false) { const pre = document.createElement('span'); pre.className = 'pre'; pre.textContent = '> '; p.appendChild(pre); }
   p.classList.add('cursor');
   for (const part of parts) {
@@ -245,7 +237,7 @@ async function typeLine(parts, cls, opts) {
       const now = performance.now();
       while (i < text.length && due <= now) {
         const ch = text[i++];
-        due += /[.!?—]/.test(ch) ? 110 : /[,;:]/.test(ch) ? 50 : 9 + Math.random() * 12;
+        due += (/[.!?—]/.test(ch) ? 110 : /[,;:]/.test(ch) ? 50 : 9 + Math.random() * 12) * pace;
       }
       span.textContent = text.slice(0, i);
       if (skip) { span.textContent = text; break; }
@@ -253,8 +245,8 @@ async function typeLine(parts, cls, opts) {
     }
   }
   p.classList.remove('cursor');
-  window.scrollTo(0, document.body.scrollHeight);
-  await sleep(skip || reduced ? 0 : 200);
+  if (nearBottom) window.scrollTo(0, document.body.scrollHeight);
+  await sleep(skip || reduced ? 0 : (opts.gap || 200));
 }
 
 /* ── motion (Android: no permission needed; iOS: asked later, as a dare) ── */
@@ -634,12 +626,33 @@ function buildDares(d) {
   return dareEls.length;
 }
 
-function revealEnd(scroll) {
+const K = t => ({ text: t, cls: 'k' });
+const LESSON = [
+  { parts: ["Relax. I didn't hack you."], cls: 'lead', gap: 1400 },
+  { parts: ["Every website you open can see all of this the second it loads. Google. That betting site. That link your uncle forwarded. All of them."], gap: 1200 },
+  { parts: ["What none of them can see: ", K('your name'), ', ', K('your number'), ', ', K('your contacts'), ', ', K('your photos'), ', ', K('your WhatsApp'), '.'], gap: 1200 },
+  { parts: ["Your exact location? Only if you tap ", K('"Allow"'), ". So only tap it for apps that need it — maps, Bolt, Uber."], gap: 1400 },
+  { parts: ["Now, since you're here — a few things that actually keep you safe. Small small."], gap: 1400 },
+  { parts: ["1. WhatsApp will send you a ", K('6-digit code'), ". Never give it to anyone. Not \"WhatsApp support\", not \"MTN\", not your cousin. ", K('That code IS your account.')], cls: 'tip', gap: 1600 },
+  { parts: ["2. Lock it properly: WhatsApp → Settings → Account → ", K('Two-step verification'), ". Thirty seconds. Stops almost every hijack."], cls: 'tip', gap: 1600 },
+  { parts: ["3. MTN, Telecel and AirtelTigo will ", K('never'), " call to ask for your MoMo PIN. Anyone who asks is a thief. Hang up."], cls: 'tip', gap: 1600 },
+  { parts: ["4. \"I sent you money by mistake, please send it back\" — check your balance first. Nothing came in. ", K("It's a scam."), ""], cls: 'tip', gap: 1600 },
+  { parts: ["5. One password per app, and make it a ", K('sentence'), ". \"MyGrandmaSellsKenkeyAtMarketCircle\" beats \"Kofi2024\". Let your phone remember them."], cls: 'tip', gap: 1600 },
+  { parts: ["6. \"Congratulations, you've won…\" — you haven't. Anything that needs a \"small fee\" to release money is a scam. ", K('Every single time.')], cls: 'tip', gap: 1600 },
+  { parts: ["7. Update your phone when it asks. Boring, I know. Half of hacking is just old software."], cls: 'tip', gap: 1800 },
+  { parts: ["That's it. Nothing here was saved. Close this and it's gone."], gap: 1400 },
+  { parts: ["Now send it to someone who'd panic 😈"], cls: 'lead', gap: 500 },
+];
+async function revealEnd(scroll) {
   if (ended) return;
   ended = true;
   const end = $('end');
   end.hidden = false;
-  if (scroll) setTimeout(() => end.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }), 60);
+  skip = false;                                   // the tap that got us here shouldn't fast-forward the lesson
+  if (scroll) { end.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }); await sleep(600); }
+  const target = $('endLog');
+  for (const l of LESSON) await typeLine(l.parts, 'edu' + (l.cls ? ' ' + l.cls : ''), { target, pace: 1.5, gap: l.gap });
+  $('endActions').hidden = false;
 }
 
 /* ── share ── */
